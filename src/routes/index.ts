@@ -8,6 +8,6 @@ const routes = Router();
  * transactionsRouter será chamado e lá
  * ele dará continuidade à chamada
  */
-routes.use('/transaction', transactionsRouter);
+routes.use('/transactions', transactionsRouter);
 
 export default routes;

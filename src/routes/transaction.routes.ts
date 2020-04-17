@@ -1,64 +1,51 @@
 /**
  * Não tem responsabilidade pelo formato dos dados e nem pela maneira como eles são armazenados
+ * Receber a requisição, chamar outro arquivo e devolver uma resposta
  */
 
 import { Router } from 'express';
 
 import TransactionsRepository from '../repository/TransactionsRepository';
+import CreateTransactionsService from '../service/CreateTransactionService';
 
 const transactionsRouter = Router();
 const transactionRepository = new TransactionsRepository();
 
-let total = 0;
-
 transactionsRouter.post('/', (req, res) => {
-  const { title, value, type } = req.body;
+  try {
+    const { title, value, type } = req.body;
 
-  // acho que aqui irá o método getBalance
-  if (type === 'outcome') {
-    if (value > total) {
-      return res.status(400).json({
-        error: 'The value goes beyond the total amount the user has in cash',
-      });
-    }
+    /**
+     * Transformação de dado !== Regra de negócio
+     */
+
+    const createTransaction = new CreateTransactionsService(
+      transactionRepository,
+    );
+
+    const transaction = createTransaction.execute({ title, value, type });
+
+    return res.json(transaction);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
-
-  const transaction = transactionRepository.create(title, value, type);
-
-  return res.json(transaction);
 });
 
 transactionsRouter.get('/', (req, res) => {
-  const income: number = transactions.reduce((sum, element) => {
-    if (element.type === 'income') {
-      return sum + element.value;
-    }
+  try {
+    const transactions = transactionRepository.all();
+    const balance = transactionRepository.getBalance();
 
-    return sum;
-  }, 0);
+    // só estou formatando os dados aqui
+    const relation = {
+      transactions,
+      balance,
+    };
 
-  const outcome: number = transactions.reduce((sum, element) => {
-    if (element.type === 'outcome') {
-      return sum + element.value;
-    }
-
-    return sum;
-  }, 0);
-
-  total = income - outcome;
-
-  const balance = {
-    income,
-    outcome,
-    total,
-  };
-
-  const relation = {
-    transactions,
-    balance,
-  };
-
-  return res.json(relation);
+    return res.json(relation);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 });
 
 export default transactionsRouter;
