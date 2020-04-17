@@ -19,15 +19,17 @@ class CreateTransacrionService {
   }
 
   public execute({ title, value, type }: RequestDTO): Transaction {
-    const balance = this.transactionsRepository.getBalance();
+    if (!['income', 'outcome'].includes(type)) {
+      throw new Error('Transaction type is invalid');
+    }
+
+    const { total } = this.transactionsRepository.getBalance();
 
     // regra de negocio
-    if (type === 'outcome') {
-      if (value > balance.total) {
-        throw Error(
-          'The value goes beyond the total amount the user has in cash',
-        );
-      }
+    if (type === 'outcome' && value > total) {
+      throw Error(
+        'The value goes beyond the total amount the user has in cash',
+      );
     }
 
     const transaction = this.transactionsRepository.create({
